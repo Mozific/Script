@@ -1,0 +1,465 @@
+--[[=====================================================================
+    APERTURE HUB + ESP – DELTA MOBILE SAFE (LIGHTWEIGHT)
+    • Works on Delta Mobile (no crashes)
+    • Home: Welcome + Username + Game Name
+    • Visual → ESP Dropdown (Distance, Team Filter)
+    • > button bottom-left, draggable, scrollable
+=====================================================================]]
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- === SCREEN GUI ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ApertureHub"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- === TOGGLE BUTTON (Aperture Logo) ===
+local toggleBtn = Instance.new("ImageButton")
+toggleBtn.Size = UDim2.new(0,60,0,60)
+toggleBtn.Position = UDim2.new(0,15,0.5,-30)
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Image = "rbxassetid://6031097225"
+toggleBtn.ImageColor3 = Color3.fromRGB(0,200,255)
+toggleBtn.Parent = screenGui
+
+local tc = Instance.new("UICorner")
+tc.CornerRadius = UDim.new(0,10)
+tc.Parent = toggleBtn
+
+local isOpen = false
+
+-- === MAIN HUB ===
+local finalSize = UDim2.new(0,500,0,340)
+local hub = Instance.new("Frame")
+hub.Size = UDim2.new(0,4,0,4)
+hub.Position = UDim2.new(0.5,-2,0.5,-2)
+hub.BackgroundColor3 = Color3.fromRGB(30,30,30)
+hub.BorderSizePixel = 0
+hub.ClipsDescendants = true
+hub.Visible = false
+hub.Parent = screenGui
+
+local hc = Instance.new("UICorner")
+hc.CornerRadius = UDim.new(0,12)
+hc.Parent = hub
+
+-- GLOW BORDER
+local glow = Instance.new("Frame")
+glow.Size = UDim2.new(1,8,1,8)
+glow.Position = UDim2.new(0,-4,0,-4)
+glow.BackgroundColor3 = Color3.fromRGB(0,180,255)
+glow.BorderSizePixel = 0
+glow.ZIndex = 0
+glow.Parent = hub
+
+local gc = Instance.new("UICorner")
+gc.CornerRadius = UDim.new(0,16)
+gc.Parent = glow
+
+-- TITLE
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-40,0,45)
+title.Position = UDim2.new(0,20,0,15)
+title.BackgroundTransparency = 1
+title.Text = "Aperture Science"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.Code
+title.TextSize = 28
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = hub
+
+local sub = Instance.new("TextLabel")
+sub.Size = UDim2.new(1,-40,0,25)
+sub.Position = UDim2.new(0,22,0,55)
+sub.BackgroundTransparency = 1
+sub.Text = "INNOVATORS"
+sub.TextColor3 = Color3.fromRGB(0,180,255)
+sub.Font = Enum.Font.Code
+sub.TextSize = 16
+sub.TextXAlignment = Enum.TextXAlignment.Left
+sub.Parent = hub
+
+-- === SIDEBAR ===
+local sidebarW = 160
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0,sidebarW,1,0)
+sidebar.Position = UDim2.new(0,-sidebarW,0,0)
+sidebar.BackgroundColor3 = Color3.fromRGB(22,22,22)
+sidebar.BorderSizePixel = 0
+sidebar.ClipsDescendants = true
+sidebar.Parent = hub
+
+local sc = Instance.new("UICorner")
+sc.CornerRadius = UDim.new(0,12)
+sc.Parent = sidebar
+
+-- > BUTTON (bottom-left)
+local sideToggle = Instance.new("TextButton")
+sideToggle.Size = UDim2.new(0,35,0,35)
+sideToggle.Position = UDim2.new(0,5,1,-40)
+sideToggle.BackgroundColor3 = Color3.fromRGB(0,180,255)
+sideToggle.Text = ">"
+sideToggle.TextColor3 = Color3.fromRGB(255,255,255)
+sideToggle.Font = Enum.Font.Code
+sideToggle.TextSize = 20
+sideToggle.AutoButtonColor = false
+sideToggle.Parent = sidebar
+
+local stc = Instance.new("UICorner")
+stc.CornerRadius = UDim.new(0,8)
+stc.Parent = sideToggle
+
+local sideOpen = false
+
+-- CONTENT
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1,-sidebarW,1,0)
+content.Position = UDim2.new(0,sidebarW,0,0)
+content.BackgroundTransparency = 1
+content.Parent = hub
+
+-- SCROLL
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1,0,1,0)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 5
+scroll.CanvasSize = UDim2.new(0,0,0,600)
+scroll.Parent = content
+
+-- === TABS ===
+local tabs = {}
+local tabY = 15
+
+local function makeTab(name)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,-20,0,40)
+    btn.Position = UDim2.new(0,10,0,tabY)
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Font = Enum.Font.Code
+    btn.TextSize = 18
+    btn.AutoButtonColor = false
+    btn.Parent = sidebar
+
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0,6)
+    bc.Parent = btn
+
+    local page = Instance.new("Frame")
+    page.Size = UDim2.new(1,0,1,0)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.Parent = scroll
+
+    table.insert(tabs, {btn=btn, page=page})
+    tabY = tabY + 50
+
+    btn.MouseButton1Click:Connect(function()
+        for _, t in ipairs(tabs) do
+            t.page.Visible = (t.page == page)
+            t.btn.BackgroundColor3 = t.page.Visible and Color3.fromRGB(0,180,255) or Color3.fromRGB(40,40,40)
+        end
+    end)
+
+    return page
+end
+
+local homePage = makeTab("Home")
+local visualPage = makeTab("Visual")
+local exitPage = makeTab("Exit")
+
+-- === HOME PAGE ===
+local function addLabel(page, text, y)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1,-20,0,30)
+    lbl.Position = UDim2.new(0,10,0,y)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(200,200,200)
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = 18
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = page
+    page.CanvasSize = UDim2.new(0,0,0,page.CanvasSize.Y.Offset + 40)
+end
+
+addLabel(homePage, "Welcome, "..player.DisplayName, 20)
+addLabel(homePage, "Game: "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name, 70)
+
+-- === VISUAL → ESP DROPDOWN ===
+local dropdownOpen = false
+local dropdown = Instance.new("Frame")
+dropdown.Size = UDim2.new(1,-20,0,0)
+dropdown.Position = UDim2.new(0,10,0,50)
+dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
+dropdown.Visible = false
+dropdown.Parent = visualPage
+
+local dc = Instance.new("UICorner")
+dc.CornerRadius = UDim.new(0,6)
+dc.Parent = dropdown
+
+local dropBtn = Instance.new("TextButton")
+dropBtn.Size = UDim2.new(1,-20,0,40)
+dropBtn.Position = UDim2.new(0,10,0,10)
+dropBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+dropBtn.Text = "ESP Settings >"
+dropBtn.TextColor3 = Color3.fromRGB(255,255,255)
+dropBtn.Font = Enum.Font.Code
+dropBtn.TextSize = 16
+dropBtn.Parent = visualPage
+
+local dbc = Instance.new("UICorner")
+dbc.CornerRadius = UDim.new(0,6)
+dbc.Parent = dropBtn
+
+dropBtn.MouseButton1Click:Connect(function()
+    dropdownOpen = not dropdownOpen
+    dropdown.Visible = dropdownOpen
+    dropBtn.Text = dropdownOpen and "ESP Settings v" or "ESP Settings >"
+    TweenService:Create(dropdown, TweenInfo.new(0.3), {Size = UDim2.new(1,-20,0,dropdownOpen and 220 or 0)}):Play()
+end)
+
+-- ESP TOGGLES
+local ESP = {Enabled=false, Name=true, Health=true, Team=true, Distance=true, Filter={}}
+local y = 10
+local function toggle(parent, txt, key)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1,0,0,30)
+    f.Position = UDim2.new(0,0,0,y)
+    f.BackgroundTransparency = 1
+    f.Parent = parent
+
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(0,100,1,0)
+    l.Text = txt
+    l.TextColor3 = Color3.fromRGB(255,255,255)
+    l.Font = Enum.Font.Code
+    l.TextSize = 14
+    l.Parent = f
+
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0,60,0,25)
+    b.Position = UDim2.new(1,-70,0.5,-12.5)
+    b.BackgroundColor3 = ESP[key] and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+    b.Text = ESP[key] and "ON" or "OFF"
+    b.TextColor3 = Color3.fromRGB(255,255,255)
+    b.Font = Enum.Font.Code
+    b.TextSize = 12
+    b.Parent = f
+
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0,5)
+    bc.Parent = b
+
+    b.MouseButton1Click:Connect(function()
+        ESP[key] = not ESP[key]
+        b.BackgroundColor3 = ESP[key] and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+        b.Text = ESP[key] and "ON" or "OFF"
+    end)
+    y = y + 35
+end
+
+toggle(dropdown, "ESP", "Enabled")
+toggle(dropdown, "Name", "Name")
+toggle(dropdown, "Health", "Health")
+toggle(dropdown, "Team", "Team")
+toggle(dropdown, "Distance", "Distance")
+
+-- === ESP ENGINE (LIGHT) ===
+local esp = {}
+local function highlight(part, col)
+    local h = Instance.new("Highlight")
+    h.FillColor = col
+    h.OutlineColor = col
+    h.FillTransparency = 0.5
+    h.OutlineTransparency = 0
+    h.Parent = part
+    return h
+end
+
+RunService.RenderStepped:Connect(function()
+    if not ESP.Enabled then
+        for _, v in pairs(esp) do
+            for _, o in pairs(v) do pcall(function() o:Destroy() end) end
+        end
+        esp = {}
+        return
+    end
+
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == player or not p.Character then continue end
+        local char = p.Character
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hrp or not hum then continue end
+
+        local team = p.Team and p.Team.Name or "None"
+        if #ESP.Filter > 0 and not table.find(ESP.Filter, team) then
+            if esp[p] then
+                for _, o in pairs(esp[p]) do pcall(function() o:Destroy() end) end
+                esp[p] = nil
+            end
+            continue
+        end
+
+        esp[p] = esp[p] or {}
+
+        -- Body
+        for _, part in ipairs(char:GetChildren()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                if not esp[p][part] then
+                    esp[p][part] = highlight(part, Color3.fromRGB(0,255,255))
+                end
+            end
+        end
+
+        -- Tool
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool and tool:FindFirstChild("Handle") then
+            if not esp[p].tool then
+                esp[p].tool = highlight(tool.Handle, Color3.fromRGB(255,200,0))
+            end
+        elseif esp[p].tool then
+            esp[p].tool:Destroy()
+            esp[p].tool = nil
+        end
+
+        -- Text
+        local parts = {}
+        if ESP.Name then table.insert(parts, p.DisplayName) end
+        if ESP.Health then table.insert(parts, math.floor(hum.Health).."/"..hum.MaxHealth) end
+        if ESP.Team then table.insert(parts, team) end
+        if ESP.Distance then
+            local d = (root.Position - hrp.Position).Magnitude
+            table.insert(parts, math.floor(d).."m")
+        end
+        local txt = table.concat(parts, " | ")
+
+        if txt ~= "" and not esp[p].bill then
+            local head = char:FindFirstChild("Head")
+            if head then
+                local bill = Instance.new("BillboardGui")
+                bill.Size = UDim2.new(0,200,0,50)
+                bill.Adornee = head
+                bill.StudsOffset = Vector3.new(0,3,0)
+                bill.AlwaysOnTop = true
+                bill.Parent = playerGui
+
+                local label = Instance.new("TextLabel")
+                label.Size = UDim2.new(1,0,1,0)
+                label.BackgroundTransparency = 1
+                label.Text = txt
+                label.TextColor3 = Color3.fromRGB(255,255,255)
+                label.Font = Enum.Font.Code
+                label.TextStrokeTransparency = 0.5
+                label.TextSize = 14
+                label.Parent = bill
+
+                esp[p].bill = bill
+            end
+        elseif esp[p].bill then
+            esp[p].bill.TextLabel.Text = txt
+        end
+    end
+end)
+
+-- === OPEN / CLOSE ===
+local function openHub()
+    if isOpen then return end
+    isOpen = true
+    hub.Visible = true
+    hub.Size = UDim2.new(0,4,0,4)
+    hub.Position = UDim2.new(0.5,-2,0.5,-2)
+
+    local h = TweenService:Create(hub, TweenInfo.new(0.5), {Size = UDim2.new(0, finalSize.X.Offset, 0, 4)})
+    h:Play() h.Completed:Wait()
+
+    local v = TweenService:Create(hub, TweenInfo.new(0.6, Enum.EasingStyle.Back), {Size = finalSize})
+    v:Play()
+
+    task.delay(0.7, function()
+        sideOpen = false
+        sideToggle.Text = ">"
+        openSidebar()
+        tabs[1].btn.BackgroundColor3 = Color3.fromRGB(0,180,255)
+        tabs[1].page.Visible = true
+    end)
+end
+
+local function closeHub()
+    if not isOpen then return end
+    isOpen = false
+    sideOpen = false
+    sideToggle.Text = ">"
+
+    local v = TweenService:Create(hub, TweenInfo.new(0.4), {Size = UDim2.new(0, finalSize.X.Offset, 0, 4)})
+    v:Play() v.Completed:Wait()
+
+    local h = TweenService:Create(hub, TweenInfo.new(0.3), {Size = UDim2.new(0,4,0,4)})
+    h:Play() h.Completed:Wait()
+
+    hub.Visible = false
+end
+
+local function openSidebar()
+    sideOpen = true
+    TweenService:Create(sidebar, TweenInfo.new(0.4), {Position=UDim2.new(0,0,0,0)}):Play()
+    TweenService:Create(content, TweenInfo.new(0.4), {Position=UDim2.new(0,sidebarW,0,0)}):Play()
+    sideToggle.Text = "<"
+end
+
+sideToggle.MouseButton1Click:Connect(function()
+    if sideOpen then
+        sideOpen = false
+        TweenService:Create(sidebar, TweenInfo.new(0.4), {Position=UDim2.new(0,-sidebarW,0,0)}):Play()
+        TweenService:Create(content, TweenInfo.new(0.4), {Position=UDim2.new(0,0,0,0)}):Play()
+        sideToggle.Text = ">"
+    else
+        openSidebar()
+    end
+end)
+
+toggleBtn.MouseButton1Click:Connect(function()
+    if isOpen then closeHub() else openHub() end
+end)
+
+-- DRAG
+local dragging = false
+local dragStart, startPos
+hub.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = i.Position
+        startPos = hub.Position
+    end
+end)
+hub.InputChanged:Connect(function(i)
+    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - dragStart
+        hub.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- EXIT
+exitPage.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        closeHub()
+    end
+end)
