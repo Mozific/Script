@@ -1,0 +1,28 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Aperture Science Innovators",
+    Title = "Ocyx",
+    Icon = 132647765565489, -- Roblox Decal ID
+    LoadingTitle = "Rayfield Interface Suite",
+    LoadingSubtitle = "by Ocyx",
+    Theme = "Serenity",
+    DisableRayfieldPrompts = false,
+    DisableBuildWarnings = false,
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "ApertureHub"
+    },
+    KeySystem = true,
+    KeySettings = {
+        Title = "Enter Access code",
+        Note = "",
+        FileName = "ApertureKeys",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"GlaDOS", "Meat"}
+    }
+})
+
+Rayfield:LoadConfiguration()
