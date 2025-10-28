@@ -446,7 +446,7 @@ GameTab:CreateButton({
     end
 })
 GameTab :CreateButton({
-    Name = "Brookhaven"
+    Name = "Brookhaven",
     Callback = function()
    loadstring(game:HttpGet("https://raw.githubusercontent.com/BalintTheDevXBack/Games/refs/heads/main/TIGER_X_Brookhaven"))()
     end
