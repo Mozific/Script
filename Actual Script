@@ -317,7 +317,7 @@ UniversalTab:CreateButton({
 UniversalTab:CreateButton({ Name = "Owl Hub", Callback = function() safeLoad("https://raw.githubusercontent.com/CriShoux/OwlHub/master/OwlHub.txt") end })
 
 -- === MOBILE TOOLS ===
-UniversalTab:CreateSection("Mobile Tools")
+UniversalTab:CreateSection("Essentials")
 
 UniversalTab:CreateButton({ Name = "Keyboard", Callback = function() safeLoad("https://rawscripts.net/raw/Universal-Script-key-buttons-25179") end })
 
@@ -340,7 +340,11 @@ UserInputService.InputBegan:Connect(function(input)
         end
     end
 end)
-
+UniversalTab:CreateButton({ Name = "ChatSpy", Callback = function()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/Dan41/Roblox-Scripts/refs/heads/main/CHAT%20SPY%20-%202025/ChatSpy2025.lua', true))()
+        end
+    end
+end)
 -- Mobile Fly
 local fly = false
 UniversalTab:CreateToggle({
