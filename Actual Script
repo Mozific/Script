@@ -454,3 +454,10 @@ GameTab :CreateButton({
    loadstring(game:HttpGet("https://raw.githubusercontent.com/BalintTheDevXBack/Games/refs/heads/main/TIGER_X_Brookhaven"))()
     end
 })
+GameTab :CreateButton({
+   Name = "Prison Life",
+   Callback = function()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/gonnered/aHehshjzJsizkKksdbbIsisiobfuvated/refs/heads/main/POLAND"))()
+  end
+})
