@@ -1,9 +1,12 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Window = Rayfield:CreateWindow({
     Name = "Aperture Science Innovators",
     Title = "Ocyx",
-    Icon = 132647765565489, -- Roblox Decal ID
+    Icon = 132647765565489,
     LoadingTitle = "Rayfield Interface Suite",
     LoadingSubtitle = "by Ocyx",
     Theme = "Ocean",
@@ -17,7 +20,7 @@ local Window = Rayfield:CreateWindow({
     KeySystem = true,
     KeySettings = {
         Title = "Enter Access code",
-        Note = "Please enter your Access code Provided by the facility.",
+        Note = "",
         FileName = "ApertureKeys",
         SaveKey = true,
         GrabKeyFromSite = false,
@@ -25,4 +28,378 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
-Rayfield:LoadConfiguration()
+-- Tabs
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local VisualTab = Window:CreateTab("Visual", 4483362458)
+local ExtraTab1 = Window:CreateTab("Extra1", 4483362458)
+local ExtraTab2 = Window:CreateTab("Extra2", 4483362458)
+local ExtraTab3 = Window:CreateTab("Extra3", 4483362458)
+
+-- Player Tab Elements
+local PlayerSection = PlayerTab:CreateSection("Player")
+local defaultWalkSpeed = 16
+local defaultJumpPower = 50
+local walkspeedEnabled = false
+local jumpPowerEnabled = false
+
+local WalkspeedSlider = PlayerTab:CreateSlider({
+    Name = "Walkspeed",
+    Range = {16, 200},
+    Increment = 1,
+    CurrentValue = 16,
+    Flag = "WalkspeedFlag",
+    Callback = function(val)
+        if walkspeedEnabled and Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Players.LocalPlayer.Character.Humanoid.WalkSpeed = val
+        end
+    end
+})
+
+local JumpPowerSlider = PlayerTab:CreateSlider({
+    Name = "JumpPower",
+    Range = {50, 500},
+    Increment = 1,
+    CurrentValue = 50,
+    Flag = "JumpPowerFlag",
+    Callback = function(val)
+        if jumpPowerEnabled and Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Players.LocalPlayer.Character.Humanoid.JumpPower = val
+        end
+    end
+})
+
+local WalkspeedToggle = PlayerTab:CreateToggle({
+    Name = "Enable Walkspeed",
+    CurrentValue = false,
+    Flag = "WalkspeedToggleFlag",
+    Callback = function(state)
+        walkspeedEnabled = state
+        if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = Players.LocalPlayer.Character.Humanoid
+            humanoid.WalkSpeed = state and WalkspeedSlider.CurrentValue or defaultWalkSpeed
+        end
+    end
+})
+
+local JumpPowerToggle = PlayerTab:CreateToggle({
+    Name = "Enable JumpPower",
+    CurrentValue = false,
+    Flag = "JumpPowerToggleFlag",
+    Callback = function(state)
+        jumpPowerEnabled = state
+        if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = Players.LocalPlayer.Character.Humanoid
+            humanoid.JumpPower = state and JumpPowerSlider.CurrentValue or defaultJumpPower
+        end
+    end
+})
+
+-- Noclip (unchanged as it works perfectly)
+local NoclipEnabled = false
+local noclipConnection
+local NoclipToggle = PlayerTab:CreateToggle({
+    Name = "Noclip",
+    CurrentValue = false,
+    Flag = "NoclipFlag",
+    Callback = function(state)
+        NoclipEnabled = state
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        if state then
+            noclipConnection = RunService.Stepped:Connect(function()
+                if NoclipEnabled and Players.LocalPlayer.Character then
+                    for _, part in pairs(Players.LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- Advanced ESP Section
+local EspSection = VisualTab:CreateSection("ESP Settings")
+local ESP = {
+    Enabled = false,
+    Names = true,
+    Tracers = true,
+    Tools = true,
+    SelectedTeam = "All",
+    NameColor = Color3.fromRGB(255, 255, 255),
+    TracerColor = Color3.fromRGB(255, 0, 0)
+}
+
+local espConnections = {}
+local highlightCache = {}
+
+local function createESP(player)
+    if player == Players.LocalPlayer or (ESP.SelectedTeam ~= "All" and player.Team and player.Team.Name ~= ESP.SelectedTeam) then
+        return
+    end
+
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Head") then
+        return
+    end
+
+    -- Highlight for body parts
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESPHighlight"
+    highlight.Adornee = character
+    highlight.FillColor = player.Team and player.Team.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Parent = character
+
+    -- Highlight for tools
+    local toolHighlight
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool and ESP.Tools then
+        toolHighlight = Instance.new("Highlight")
+        toolHighlight.Name = "ESPToolHighlight"
+        toolHighlight.Adornee = tool
+        toolHighlight.FillColor = player.Team and player.Team.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+        toolHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        toolHighlight.FillTransparency = 0.5
+        toolHighlight.OutlineTransparency = 0
+        toolHighlight.Parent = tool
+    end
+
+    -- Name ESP
+    local name = Instance.new("BillboardGui")
+    name.Name = "ESPName"
+    name.Size = UDim2.new(0, 100, 0, 30)
+    name.StudsOffset = Vector3.new(0, 3, 0)
+    name.AlwaysOnTop = true
+    name.Adornee = character.Head
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = ESP.NameColor
+    text.Text = player.Name
+    text.TextScaled = true
+    text.Parent = name
+    name.Parent = character
+
+    -- Tracer ESP
+    local tracer = Instance.new("LineHandleAdornment")
+    tracer.Name = "ESPTracer"
+    tracer.Length = 10
+    tracer.Thickness = 1
+    tracer.Color3 = ESP.TracerColor
+    tracer.Transparency = 0.5
+    tracer.ZIndex = 0
+    tracer.AlwaysOnTop = true
+    tracer.Adornee = character.HumanoidRootPart
+    tracer.Parent = character
+
+    highlightCache[player] = {highlight = highlight, name = name, tracer = tracer, toolHighlight = toolHighlight}
+
+    espConnections[player] = RunService.RenderStepped:Connect(function()
+        if not ESP.Enabled or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+            if highlightCache[player] then
+                if highlightCache[player].highlight then highlightCache[player].highlight:Destroy() end
+                if highlightCache[player].name then highlightCache[player].name:Destroy() end
+                if highlightCache[player].tracer then highlightCache[player].tracer:Destroy() end
+                if highlightCache[player].toolHighlight then highlightCache[player].toolHighlight:Destroy() end
+                highlightCache[player] = nil
+            end
+            if espConnections[player] then
+                espConnections[player]:Disconnect()
+                espConnections[player] = nil
+            end
+            return
+        end
+        highlight.Visible = ESP.Enabled
+        name.Visible = ESP.Names
+        tracer.Visible = ESP.Tracers
+        if ESP.Tools then
+            local newTool = character:FindFirstChildOfClass("Tool")
+            if newTool and not highlightCache[player].toolHighlight then
+                local newToolHighlight = Instance.new("Highlight")
+                newToolHighlight.Name = "ESPToolHighlight"
+                newToolHighlight.Adornee = newTool
+                newToolHighlight.FillColor = player.Team and player.Team.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+                newToolHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                newToolHighlight.FillTransparency = 0.5
+                newToolHighlight.OutlineTransparency = 0
+                newToolHighlight.Parent = newTool
+                highlightCache[player].toolHighlight = newToolHighlight
+            elseif not newTool and highlightCache[player].toolHighlight then
+                highlightCache[player].toolHighlight:Destroy()
+                highlightCache[player].toolHighlight = nil
+            end
+        end
+    end)
+end
+
+local EspToggle = VisualTab:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = false,
+    Flag = "ESPFlag",
+    Callback = function(state)
+        ESP.Enabled = state
+        for _, player in pairs(Players:GetPlayers()) do
+            if state then
+                createESP(player)
+            else
+                if highlightCache[player] then
+                    if highlightCache[player].highlight then highlightCache[player].highlight:Destroy() end
+                    if highlightCache[player].name then highlightCache[player].name:Destroy() end
+                    if highlightCache[player].tracer then highlightCache[player].tracer:Destroy() end
+                    if highlightCache[player].toolHighlight then highlightCache[player].toolHighlight:Destroy() end
+                    highlightCache[player] = nil
+                end
+                if espConnections[player] then
+                    espConnections[player]:Disconnect()
+                    espConnections[player] = nil
+                end
+            end
+        end
+    end
+})
+
+local NameToggle = VisualTab:CreateToggle({
+    Name = "Show Names",
+    CurrentValue = true,
+    Flag = "ESPNameFlag",
+    Callback = function(state)
+        ESP.Names = state
+    end
+})
+
+local TracerToggle = VisualTab:CreateToggle({
+    Name = "Show Tracers",
+    CurrentValue = true,
+    Flag = "ESPTracerFlag",
+    Callback = function(state)
+        ESP.Tracers = state
+    end
+})
+
+local ToolToggle = VisualTab:CreateToggle({
+    Name = "Highlight Tools",
+    CurrentValue = true,
+    Flag = "ESPToolFlag",
+    Callback = function(state)
+        ESP.Tools = state
+        if ESP.Enabled then
+ზ            EspToggle.Callback(false)
+            EspToggle.Callback(true)
+        end
+    end
+})
+
+local TeamDropdown = VisualTab:CreateDropdown({
+    Name = "Select Team",
+    Options = {"All"},
+    CurrentOption = {"All"},
+    MultipleOptions = false,
+    Flag = "ESPTeamDropdown",
+    Callback = function(options)
+        ESP.SelectedTeam = options[1]
+        if ESP.Enabled then
+            EspToggle.Callback(false)
+            EspToggle.Callback(true)
+        end
+    end
+})
+
+-- View Section
+local ViewSection = VisualTab:CreateSection("View")
+local spectatingPlayer = nil
+local ViewToggle = VisualTab:CreateToggle({
+    Name = "Spectate Player",
+    CurrentValue = false,
+    Flag = "ViewPlayersFlag",
+    Callback = function(state)
+        if not state or not spectatingPlayer then
+            Workspace.CurrentCamera.CameraSubject = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") or Players.LocalPlayer.Character
+            spectatingPlayer = nil
+        elseif spectatingPlayer and spectatingPlayer.Character and spectatingPlayer.Character:FindFirstChild("Humanoid") then
+            Workspace.CurrentCamera.CameraSubject = spectatingPlayer.Character.Humanoid
+        end
+    end
+})
+
+local PlayerDropdown = VisualTab:CreateDropdown({
+    Name = "Select Player",
+    Options = {},
+    CurrentOption = {},
+    MultipleOptions = false,
+    Flag = "PlayerViewDropdown",
+    Callback = function(options)
+        local targetPlayerName = options[1]
+        local targetPlayer = Players:FindFirstChild(targetPlayerName)
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
+            spectatingPlayer = targetPlayer
+            if ViewToggle.CurrentValue then
+                Workspace.CurrentCamera.CameraSubject = targetPlayer.Character.Humanoid
+            end
+        end
+    end
+})
+
+local RefreshButton = VisualTab:CreateButton({
+    Name = "Refresh Players",
+    Callback = function()
+        local players = {}
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= Players.LocalPlayer then
+                table.insert(players, plr.Name)
+            end
+        end
+        PlayerDropdown:Refresh(players)
+        
+        -- Refresh team dropdown
+        local teams = {"All"}
+        for _, team in pairs(game:GetService("Teams"):GetTeams()) do
+            table.insert(teams, team.Name)
+        end
+        TeamDropdown:Refresh(teams)
+    end
+})
+
+-- Handle player joining/leaving
+Players.PlayerAdded:Connect(function(player)
+    if ESP.Enabled then
+        createESP(player)
+    end
+    RefreshButton.Callback()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if highlightCache[player] then
+        if highlightCache[player].highlight then highlightCache[player].highlight:Destroy() end
+        if highlightCache[player].name then highlightCache[player].name:Destroy() end
+        if highlightCache[player].tracer then highlightCache[player].tracer:Destroy() end
+        if highlightCache[player].toolHighlight then highlightCache[player].toolHighlight:Destroy() end
+        highlightCache[player] = nil
+    end
+    if espConnections[player] then
+        espConnections[player]:Disconnect()
+        espConnections[player] = nil
+    end
+    if spectatingPlayer == player then
+        ViewToggle.Callback(false)
+        spectatingPlayer = nil
+    end
+    RefreshButton.Callback()
+end)
+
+-- Handle team changes
+game:GetService("Teams").TeamAdded:Connect(function()
+    RefreshButton.Callback()
+end)
+
+game:GetService("Teams").TeamRemoved:Connect(function()
+    RefreshButton.Callback()
+end)
+
+-- Initial refresh
+RefreshButton.Callback()
