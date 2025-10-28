@@ -1,32 +1,59 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local Teams = game:GetService("Teams")
+local LocalPlayer = Players.LocalPlayer
 
-local Window = Rayfield:CreateWindow({
-    Name = "Aperture Science Innovators",
-    Title = "Ocyx",
-    Icon = 132647765565489,
-    LoadingTitle = "Rayfield Interface Suite",
-    LoadingSubtitle = "by Ocyx",
-    Theme = "Ocean",
-    DisableRayfieldPrompts = false,
-    DisableBuildWarnings = false,
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = nil,
-        FileName = "ApertureHub"
-    },
-    KeySystem = true,
-    KeySettings = {
-        Title = "Enter Access code",
-        Note = "",
-        FileName = "ApertureKeys",
-        SaveKey = true,
-        GrabKeyFromSite = false,
-        Key = {"GlaDOS", "Meat"}
-    }
-})
+-- Debug function
+local function debugPrint(message)
+    print("[ApertureHub Debug]: " .. tostring(message))
+end
+
+-- Load Rayfield with error handling
+local Rayfield
+local success, errorMsg = pcall(function()
+    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+if not success then
+    debugPrint("Failed to load Rayfield library: " .. errorMsg)
+    return
+end
+debugPrint("Rayfield library loaded successfully")
+
+-- Create Window
+local Window
+success, errorMsg = pcall(function()
+    Window = Rayfield:CreateWindow({
+        Name = "Aperture Science Innovators",
+        Title = "Ocyx",
+        Icon = 132647765565489,
+        LoadingTitle = "Rayfield Interface Suite",
+        LoadingSubtitle = "by Ocyx",
+        Theme = "Ocean",
+        DisableRayfieldPrompts = false,
+        DisableBuildWarnings = false,
+        ConfigurationSaving = {
+            Enabled = true,
+            FolderName = nil,
+            FileName = "ApertureHub"
+        },
+        KeySystem = true,
+        KeySettings = {
+            Title = "Enter Access code",
+            Note = "",
+            FileName = "ApertureKeys",
+            SaveKey = true,
+            GrabKeyFromSite = false,
+            Key = {"GlaDOS", "Meat"}
+        }
+    })
+end)
+if not success then
+    debugPrint("Failed to create window: " .. errorMsg)
+    return
+end
+debugPrint("Window created successfully")
 
 -- Tabs
 local PlayerTab = Window:CreateTab("Player", 4483362458)
@@ -41,6 +68,8 @@ local defaultWalkSpeed = 16
 local defaultJumpPower = 50
 local walkspeedEnabled = false
 local jumpPowerEnabled = false
+local walkspeedValue = defaultWalkSpeed
+local jumpPowerValue = defaultJumpPower
 
 local WalkspeedSlider = PlayerTab:CreateSlider({
     Name = "Walkspeed",
@@ -49,8 +78,10 @@ local WalkspeedSlider = PlayerTab:CreateSlider({
     CurrentValue = 16,
     Flag = "WalkspeedFlag",
     Callback = function(val)
-        if walkspeedEnabled and Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            Players.LocalPlayer.Character.Humanoid.WalkSpeed = val
+        walkspeedValue = val
+        if walkspeedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = val
+            debugPrint("Walkspeed set to: " .. val)
         end
     end
 })
@@ -62,8 +93,10 @@ local JumpPowerSlider = PlayerTab:CreateSlider({
     CurrentValue = 50,
     Flag = "JumpPowerFlag",
     Callback = function(val)
-        if jumpPowerEnabled and Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            Players.LocalPlayer.Character.Humanoid.JumpPower = val
+        jumpPowerValue = val
+        if jumpPowerEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = val
+            debugPrint("JumpPower set to: " .. val)
         end
     end
 })
@@ -74,9 +107,10 @@ local WalkspeedToggle = PlayerTab:CreateToggle({
     Flag = "WalkspeedToggleFlag",
     Callback = function(state)
         walkspeedEnabled = state
-        if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            local humanoid = Players.LocalPlayer.Character.Humanoid
-            humanoid.WalkSpeed = state and WalkspeedSlider.CurrentValue or defaultWalkSpeed
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = LocalPlayer.Character.Humanoid
+            humanoid.WalkSpeed = state and walkspeedValue or defaultWalkSpeed
+            debugPrint("Walkspeed toggle: " .. (state and "Enabled" or "Disabled"))
         end
     end
 })
@@ -87,14 +121,15 @@ local JumpPowerToggle = PlayerTab:CreateToggle({
     Flag = "JumpPowerToggleFlag",
     Callback = function(state)
         jumpPowerEnabled = state
-        if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            local humanoid = Players.LocalPlayer.Character.Humanoid
-            humanoid.JumpPower = state and JumpPowerSlider.CurrentValue or defaultJumpPower
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = LocalPlayer.Character.Humanoid
+            humanoid.JumpPower = state and jumpPowerValue or defaultJumpPower
+            debugPrint("JumpPower toggle: " .. (state and "Enabled" or "Disabled"))
         end
     end
 })
 
--- Noclip (unchanged as it works perfectly)
+-- Noclip (unchanged)
 local NoclipEnabled = false
 local noclipConnection
 local NoclipToggle = PlayerTab:CreateToggle({
@@ -109,14 +144,17 @@ local NoclipToggle = PlayerTab:CreateToggle({
         end
         if state then
             noclipConnection = RunService.Stepped:Connect(function()
-                if NoclipEnabled and Players.LocalPlayer.Character then
-                    for _, part in pairs(Players.LocalPlayer.Character:GetDescendants()) do
+                if NoclipEnabled and LocalPlayer.Character then
+                    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
                         if part:IsA("BasePart") then
                             part.CanCollide = false
                         end
                     end
                 end
             end)
+            debugPrint("Noclip enabled")
+        else
+            debugPrint("Noclip disabled")
         end
     end
 })
@@ -137,7 +175,7 @@ local espConnections = {}
 local highlightCache = {}
 
 local function createESP(player)
-    if player == Players.LocalPlayer or (ESP.SelectedTeam ~= "All" and player.Team and player.Team.Name ~= ESP.SelectedTeam) then
+    if player == LocalPlayer or (ESP.SelectedTeam ~= "All" and player.Team and player.Team.Name ~= ESP.SelectedTeam) then
         return
     end
 
@@ -218,6 +256,7 @@ local function createESP(player)
         highlight.Visible = ESP.Enabled
         name.Visible = ESP.Names
         tracer.Visible = ESP.Tracers
+        highlight.FillColor = player.Team and player.Team.TeamColor.Color or Color3.fromRGB(255, 0, 0)
         if ESP.Tools then
             local newTool = character:FindFirstChildOfClass("Tool")
             if newTool and not highlightCache[player].toolHighlight then
@@ -261,6 +300,7 @@ local EspToggle = VisualTab:CreateToggle({
                 end
             end
         end
+        debugPrint("ESP toggle: " .. (state and "Enabled" or "Disabled"))
     end
 })
 
@@ -270,6 +310,7 @@ local NameToggle = VisualTab:CreateToggle({
     Flag = "ESPNameFlag",
     Callback = function(state)
         ESP.Names = state
+        debugPrint("ESP Names: " .. (state and "Enabled" or "Disabled"))
     end
 })
 
@@ -279,6 +320,7 @@ local TracerToggle = VisualTab:CreateToggle({
     Flag = "ESPTracerFlag",
     Callback = function(state)
         ESP.Tracers = state
+        debugPrint("ESP Tracers: " .. (state and "Enabled" or "Disabled"))
     end
 })
 
@@ -289,9 +331,10 @@ local ToolToggle = VisualTab:CreateToggle({
     Callback = function(state)
         ESP.Tools = state
         if ESP.Enabled then
-ზ            EspToggle.Callback(false)
+            EspToggle.Callback(false)
             EspToggle.Callback(true)
         end
+        debugPrint("ESP Tools: " .. (state and "Enabled" or "Disabled"))
     end
 })
 
@@ -307,6 +350,7 @@ local TeamDropdown = VisualTab:CreateDropdown({
             EspToggle.Callback(false)
             EspToggle.Callback(true)
         end
+        debugPrint("ESP Team selected: " .. options[1])
     end
 })
 
@@ -319,10 +363,14 @@ local ViewToggle = VisualTab:CreateToggle({
     Flag = "ViewPlayersFlag",
     Callback = function(state)
         if not state or not spectatingPlayer then
-            Workspace.CurrentCamera.CameraSubject = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") or Players.LocalPlayer.Character
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                Workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+            end
             spectatingPlayer = nil
+            debugPrint("Spectate disabled")
         elseif spectatingPlayer and spectatingPlayer.Character and spectatingPlayer.Character:FindFirstChild("Humanoid") then
             Workspace.CurrentCamera.CameraSubject = spectatingPlayer.Character.Humanoid
+            debugPrint("Spectating player: " .. spectatingPlayer.Name)
         end
     end
 })
@@ -340,7 +388,10 @@ local PlayerDropdown = VisualTab:CreateDropdown({
             spectatingPlayer = targetPlayer
             if ViewToggle.CurrentValue then
                 Workspace.CurrentCamera.CameraSubject = targetPlayer.Character.Humanoid
+                debugPrint("Selected player to spectate: " .. targetPlayerName)
             end
+        else
+            debugPrint("Failed to select player for spectate: " .. targetPlayerName)
         end
     end
 })
@@ -350,7 +401,7 @@ local RefreshButton = VisualTab:CreateButton({
     Callback = function()
         local players = {}
         for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= Players.LocalPlayer then
+            if plr ~= LocalPlayer then
                 table.insert(players, plr.Name)
             end
         end
@@ -358,10 +409,11 @@ local RefreshButton = VisualTab:CreateButton({
         
         -- Refresh team dropdown
         local teams = {"All"}
-        for _, team in pairs(game:GetService("Teams"):GetTeams()) do
+        for _, team in pairs(Teams:GetTeams()) do
             table.insert(teams, team.Name)
         end
         TeamDropdown:Refresh(teams)
+        debugPrint("Refreshed player and team lists")
     end
 })
 
@@ -393,13 +445,26 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 -- Handle team changes
-game:GetService("Teams").TeamAdded:Connect(function()
+Teams.TeamAdded:Connect(function()
     RefreshButton.Callback()
 end)
 
-game:GetService("Teams").TeamRemoved:Connect(function()
+Teams.TeamRemoved:Connect(function()
     RefreshButton.Callback()
 end)
 
 -- Initial refresh
 RefreshButton.Callback()
+
+-- Ensure character reloads are handled
+LocalPlayer.CharacterAdded:Connect(function(character)
+    if walkspeedEnabled and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = walkspeedValue
+    end
+    if jumpPowerEnabled and character:FindFirstChild("Humanoid") then
+        character.Humanoid.JumpPower = jumpPowerValue
+    end
+    debugPrint("Character reloaded, applied settings")
+end)
+
+debugPrint("Script initialized successfully")
