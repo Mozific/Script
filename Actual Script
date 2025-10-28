@@ -426,7 +426,7 @@ debugPrint("ApertureHub Loaded - Reviz Admin V2 Fixed!")
 -- Game Scripts Section
 local GameSection = GameTab:CreateSection("Game Scripts")
 
--- Placeholder Button 1
+-- Piggy Button
 GameTab:CreateButton({
     Name = "Piggy",
     Callback = function()
@@ -436,12 +436,18 @@ GameTab:CreateButton({
     end
 })
 
--- Placeholder Button 2
+-- GaG Button
 GameTab:CreateButton({
-    Name = "Placeholder 2",
+    Name = "Grow A Garden",
     Callback = function()
         -- Replace this comment with your loadstring
         -- Example: loadstring(game:HttpGet("YOUR_URL_HERE"))()
-        print("Placeholder 2 clicked - add your script here")
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/BalintTheDevXBack/Games/refs/heads/main/GrowAGarden"))()
+    end
+})
+GameTab :CreateButton({
+    Name = "Brookhaven"
+    Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/BalintTheDevXBack/Games/refs/heads/main/TIGER_X_Brookhaven"))()
     end
 })
