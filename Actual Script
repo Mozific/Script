@@ -40,6 +40,7 @@ local Window = Rayfield:CreateWindow({
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local VisualTab = Window:CreateTab("Visual", 4483362458)
 local UniversalTab = Window:CreateTab("Universal", 4483362458)
+local GameTab = Window:CreateTab("Game", 4483362458)
 
 -- === PLAYER TAB ===
 local defaultWalk = 16
@@ -422,3 +423,25 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 
 debugPrint("ApertureHub Loaded - Reviz Admin V2 Fixed!")
+-- Game Scripts Section
+local GameSection = GameTab:CreateSection("Game Scripts")
+
+-- Placeholder Button 1
+GameTab:CreateButton({
+    Name = "Placeholder 1",
+    Callback = function()
+        -- Replace this comment with your loadstring
+        -- Example: loadstring(game:HttpGet("YOUR_URL_HERE"))()
+        print("Placeholder 1 clicked - add your script here")
+    end
+})
+
+-- Placeholder Button 2
+GameTab:CreateButton({
+    Name = "Placeholder 2",
+    Callback = function()
+        -- Replace this comment with your loadstring
+        -- Example: loadstring(game:HttpGet("YOUR_URL_HERE"))()
+        print("Placeholder 2 clicked - add your script here")
+    end
+})
